@@ -4,7 +4,6 @@ import io.micronaut.context.annotation.Executable;
 import io.micronaut.core.annotation.Introspected;
 import jakarta.inject.Singleton;
 
-import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
@@ -45,68 +44,19 @@ public class ValidatorSpecClasses {
     }
 
     // test validate property argument cascade
-    @Introspected
-    public static class Author {
-        @NotBlank
-        private String name;
 
-        private List<@Valid Book> books;
 
-        public Author(String name) {
-            this.name = name;
-            this.books = new ArrayList<Book>();
-        }
-
-        public Author(String name, List<Book> books) {
-            this.name = name;
-            this.books = books;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public List<Book> getBooks() {
-            return books;
-        }
-    }
-
-    @Introspected
-    public static class Book {
-        @Size(min=2)
-        private String name;
-
-        private List<@Valid Author> authors;
-
-        public Book(String name) {
-            this.name = name;
-            this.authors = null;
-        }
-
-        public Book(String name, List<Author> authors) {
-            this.name = name;
-            this.authors = authors;
-        }
-
-        public List<Author> getAuthors() {
-            return authors;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
 
     // test validate property argument cascade - nested
     @Introspected
     public static class Library {
-        final private Set<@Valid Book> books;
+        final private Set<@Valid BookInfo> books;
 
-        public Library(Set<@Valid Book> books) {
+        public Library(Set<@Valid BookInfo> books) {
             this.books = books;
         }
 
-        public Set<Book> getBooks() {
+        public Set<BookInfo> getBooks() {
             return books;
         }
     }
@@ -143,7 +93,7 @@ public class ValidatorSpecClasses {
     @Singleton
     public static class BookService {
         @Executable
-        void saveBook(@Valid Book book) {
+        void saveBook(@Valid BookInfo book) {
 
         }
     }

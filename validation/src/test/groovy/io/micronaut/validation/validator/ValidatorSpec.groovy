@@ -37,7 +37,7 @@ class ValidatorSpec extends Specification {
 
     void "test simple bean validation"() {
         given:
-        Book b = new Book(title: "", pages: 50)
+        BookInfo b = new BookInfo(title: "", pages: 50)
         def violations = validator.validate(b).sort { it.propertyPath.iterator().next().name }
 
         expect:
@@ -52,7 +52,7 @@ class ValidatorSpec extends Specification {
         violations[1].invalidValue == 50
         violations[1].propertyPath.iterator().next().name == 'pages'
         violations[1].rootBean == b
-        violations[1].rootBeanClass == Book
+        violations[1].rootBeanClass == BookInfo
         violations[1].messageTemplate == '{javax.validation.constraints.Min.message}'
         violations[1].constraintDescriptor != null
         violations[1].constraintDescriptor.annotation instanceof Min
@@ -126,7 +126,7 @@ class ValidatorSpec extends Specification {
 
     void "test validate bean property cascade"() {
         given:
-        Book b = new Book(primaryAuthor: new Author(name: "", age: 200));
+        BookInfo b = new BookInfo(primaryAuthor: new AuthorInfo(name: "", age: 200));
         def violations = validator.validateProperty(b, "primaryAuthor").sort{it.propertyPath.toString();}
 
         expect:
@@ -135,7 +135,7 @@ class ValidatorSpec extends Specification {
 
     void "test validate bean property"() {
         given:
-        Book b = new Book(title: "", pages: 50)
+        BookInfo b = new BookInfo(title: "", pages: 50)
         def violations = validator.validateProperty(b, "title").sort { it.propertyPath.iterator().next().name }
 
         expect:
@@ -149,7 +149,7 @@ class ValidatorSpec extends Specification {
 
     void "test validate value"() {
         given:
-        def violations = validator.validateValue(Book, "title", "").sort { it.propertyPath.iterator().next().name }
+        def violations = validator.validateValue(BookInfo, "title", "").sort { it.propertyPath.iterator().next().name }
 
         expect:
         violations.size() == 1
@@ -161,12 +161,12 @@ class ValidatorSpec extends Specification {
 
     void "test cascade to bean"() {
         given:
-        Book b = new Book(
+        BookInfo b = new BookInfo(
                 title: "The Stand",
                 pages: 1000,
-                primaryAuthor: new Author(age: 150),
+                primaryAuthor: new AuthorInfo(age: 150),
                 authors: [
-                        new Author(name: "Stephen King", age: 50)
+                        new AuthorInfo(name: "Stephen King", age: 50)
                 ]
         )
         def violations = validator.validate(b).sort { it.propertyPath.iterator().next().name }
@@ -181,7 +181,7 @@ class ValidatorSpec extends Specification {
         v1.propertyPath.toString() == 'primaryAuthor.age'
         v1.invalidValue == 150
         v1.rootBean.is(b)
-        v1.leafBean instanceof Author
+        v1.leafBean instanceof AuthorInfo
         v1.constraintDescriptor != null
         v1.constraintDescriptor.annotation instanceof Max
         v1.constraintDescriptor.annotation.value() == 100l
@@ -194,11 +194,11 @@ class ValidatorSpec extends Specification {
 
     void "test cascade to bean - handle cycle"() {
         given:
-        Book b = new Book(
+        BookInfo b = new BookInfo(
                 title: "The Stand",
                 pages: 1000,
-                primaryAuthor: new Author(age: 150),
-                authors: [new Author(name: "Stephen King", age: 50)]
+                primaryAuthor: new AuthorInfo(age: 150),
+                authors: [new AuthorInfo(name: "Stephen King", age: 50)]
         )
         b.primaryAuthor.favouriteBook = b // create cycle
         def violations = validator.validate(b).sort { it.propertyPath.iterator().next().name }
@@ -212,7 +212,7 @@ class ValidatorSpec extends Specification {
         v1.propertyPath.toString() == 'primaryAuthor.age'
         v1.invalidValue == 150
         v1.rootBean.is(b)
-        v1.leafBean instanceof Author
+        v1.leafBean instanceof AuthorInfo
         v1.constraintDescriptor != null
         v1.constraintDescriptor.annotation instanceof Max
         v1.constraintDescriptor.annotation.value() == 100l
@@ -297,7 +297,7 @@ class ValidatorSpec extends Specification {
 
     void "test validate property argument cascade"() {
         given:
-        def book = new ValidatorSpecClasses.Book("LOTR", [new ValidatorSpecClasses.Author("")])
+        def book = new Book("LOTR", [new Author("")])
         def violations = validator.validate(book);
 
         expect:
@@ -308,7 +308,7 @@ class ValidatorSpec extends Specification {
 
     void "test validate property argument cascade with cycle"() {
         given:
-        def book = new ValidatorSpecClasses.Book("LOTR", [new ValidatorSpecClasses.Author("")])
+        def book = new Book("LOTR", [new Author("")])
         book.authors[0].books.add(book)
         def violations = validator.validate(book)
 
@@ -320,7 +320,7 @@ class ValidatorSpec extends Specification {
 
     void "test validate property argument cascade of null container"() {
         given:
-        def book = new ValidatorSpecClasses.Book("LOTR")
+        def book = new Book("LOTR")
         def violations = validator.validate(book)
 
         expect:
@@ -330,12 +330,12 @@ class ValidatorSpec extends Specification {
     void "test validate property argument cascade - nested"() {
         given:
         Set books = [
-                new ValidatorSpecClasses.Book("Alice in wonderland", []),
-                new ValidatorSpecClasses.Book("LOTR", [
-                        new ValidatorSpecClasses.Author("Bob"),
-                        new ValidatorSpecClasses.Author("")
+                new Book("Alice in wonderland", []),
+                new Book("LOTR", [
+                        new Author("Bob"),
+                        new Author("")
                 ]),
-                new ValidatorSpecClasses.Book("?")
+                new Book("?")
         ]
         def library = new ValidatorSpecClasses.Library(books)
         def violations = validator.validate(library)
@@ -398,7 +398,7 @@ class ValidatorSpec extends Specification {
 
     void "test validate argument annotations null"() {
         when:
-        var book = new ValidatorSpecClasses.Book("Alice In Wonderland", [null])
+        var book = new Book("Alice In Wonderland", [null])
         var violations = validator.validate(book)
 
         then:
@@ -453,8 +453,8 @@ class ValidatorSpec extends Specification {
     void "test executable validator - cascade"() {
         given:
         def bookService = applicationContext.getBean(ValidatorSpecClasses.BookService)
-        def book = new ValidatorSpecClasses.Book("X", [
-                new ValidatorSpecClasses.Author("")
+        def book = new Book("X", [
+                new Author("")
         ])
         def violations = validator.forExecutables().validateParameters(
                 bookService,
@@ -686,7 +686,7 @@ class ValidatorSpec extends Specification {
 
     void "test bean descriptor"() {
         given:
-        BeanDescriptor beanDescriptor = validator.getConstraintsForClass(Book)
+        BeanDescriptor beanDescriptor = validator.getConstraintsForClass(BookInfo)
 
         def descriptors = beanDescriptor.getConstraintsForProperty("authors")
                 .getConstraintDescriptors()
@@ -818,7 +818,7 @@ class ObjectArray {
 }
 
 @Introspected
-class Book {
+class BookInfo {
     @NotBlank
     String title
 
@@ -827,21 +827,21 @@ class Book {
 
     @Valid
     @NotNull
-    Author primaryAuthor
+    AuthorInfo primaryAuthor
 
     @Size(min = 1, max = 10)
-    List<@Valid Author> authors = []
+    List<@Valid AuthorInfo> authors = []
 }
 
 @Introspected
-class Author {
+class AuthorInfo {
     @NotBlank
     String name
     @Max(100l)
     Integer age
 
     @Valid
-    Book favouriteBook
+    BookInfo favouriteBook
 }
 
 @Introspected
@@ -872,8 +872,8 @@ class ArrayTest {
 @Singleton
 class BookService {
     @Executable
-    Book saveBook(@NotBlank String title, @Min(100l) int pages) {
-        new Book(title: title, pages: pages)
+    BookInfo saveBook(@NotBlank String title, @Min(100l) int pages) {
+        new BookInfo(title: title, pages: pages)
     }
 }
 
